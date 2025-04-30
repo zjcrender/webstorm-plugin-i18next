@@ -1,15 +1,50 @@
 <!-- Plugin Configuration File. Read more: https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html -->
 <idea-plugin>
-    <id>com.github.zjcrender.webstormplugini18next</id>
-    <name>webstorm-plugin-i18next</name>
-    <vendor>zjcrender</vendor>
+  <id>com.github.zjcrender.i18nextb</id>
+  <name>I18next</name>
+  <vendor>zjcrender</vendor>
+  <description>
+    A plugin for i18next translation preview in JavaScript and TypeScript files.
+  </description>
 
-    <depends>com.intellij.modules.platform</depends>
+  <depends>com.intellij.modules.lang</depends>
+  <depends>com.intellij.modules.platform</depends>
+  <depends>com.intellij.modules.javascript</depends>
 
-    <resource-bundle>messages.MyBundle</resource-bundle>
+  <extensions defaultExtensionNs="com.intellij">
+    <!-- Startup activity to initialize the plugin -->
+    <postStartupActivity implementation="com.github.zjcrender.i18next.startup.I18nextActivity"/>
 
-    <extensions defaultExtensionNs="com.intellij">
-        <toolWindow factoryClass="com.github.zjcrender.webstormplugini18next.toolWindow.MyToolWindowFactory" id="MyToolWindow"/>
-        <postStartupActivity implementation="com.github.zjcrender.webstormplugini18next.startup.MyProjectActivity" />
-    </extensions>
+    <!-- Settings -->
+    <projectConfigurable
+      instance="com.github.zjcrender.i18next.settings.I18nextConfigurable"
+      id="com.github.zjcrender.i18next.settings.I18nextConfigurable"
+      displayName="I18next Settings"
+    />
+
+    <!-- Folding builder for translation preview -->
+    <lang.foldingBuilder
+      language="JavaScript"
+      implementationClass="com.github.zjcrender.i18next.folding.TranslationFoldingBuilder"
+    />
+    <lang.foldingBuilder
+      language="TypeScript"
+      implementationClass="com.github.zjcrender.i18next.folding.TranslationFoldingBuilder"
+    />
+    <lang.foldingBuilder
+      language="TypeScript JSX"
+      implementationClass="com.github.zjcrender.i18next.folding.TranslationFoldingBuilder"
+    />
+
+    <!-- Notifications -->
+    <notificationGroup id="I18next Notifications" displayType="BALLOON"/>
+  </extensions>
+
+  <!-- File editor listeners -->
+  <projectListeners>
+    <listener
+      class="com.github.zjcrender.i18next.listeners.FileEditorListener"
+      topic="com.intellij.openapi.fileEditor.FileEditorManagerListener"
+    />
+  </projectListeners>
 </idea-plugin>
