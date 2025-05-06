@@ -12,6 +12,14 @@ function safeRequire(packageName, fallback = undefined) {
   }
 }
 
+function safeLoadJson(path, fallback = Object.create(null)) {
+  try {
+    return JSON.parse(fs.readFileSync(path, 'utf8'));
+  } catch {
+    return fallback
+  }
+}
+
 const server = {
   i18n: null,
   dir: null,
@@ -35,7 +43,7 @@ const server = {
         if (!file.endsWith('.json')) return
         const ns = file.replace(/\.json$/, '')
         namespaces.push(ns)
-        resourceMap[ns] = safeRequire(path.join(absPath, file))
+        resourceMap[ns] = safeLoadJson(path.join(absPath, file))
       })
       resources[name] = resourceMap;
     })
@@ -57,7 +65,7 @@ const server = {
     this.i18n.addResourceBundle(
       this.i18n.language,
       ns,
-      safeRequire(path.join(this.dir, this.i18n.language, `${ ns }.json`, Object.create(null))),
+      safeLoadJson(path.join(this.dir, this.i18n.language, `${ ns }.json`)),
       true,
       true
     )
@@ -84,5 +92,3 @@ process.stdin.on('data', (input) => {
     console.error(e);
   }
 });
-
-

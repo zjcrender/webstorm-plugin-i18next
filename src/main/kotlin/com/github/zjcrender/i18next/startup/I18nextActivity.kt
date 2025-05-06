@@ -1,9 +1,9 @@
 package com.github.zjcrender.i18next.startup
 
 import com.github.zjcrender.i18next.services.TranslationService
-import com.github.zjcrender.i18next.settings.I18nextConfigurable
 import com.github.zjcrender.i18next.settings.I18nextSettings
 import com.github.zjcrender.i18next.util.I18nUtil
+import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.ProjectActivity
@@ -21,8 +21,8 @@ class I18nextActivity : ProjectActivity {
 
     I18nUtil.setProject(project)
 
-    val translationService = TranslationService.getInstance()
-    val settings = I18nextSettings.getInstance(project).state
+    val translationService = project.service<TranslationService>()
+    val settings = project.service<I18nextSettings>().state
 
     translationService.start(File(project.basePath!!))
     translationService.invoke("setup", listOf<Any>(settings.localesDirectory, settings.selectedLanguage, settings.selectedNamespace))

@@ -68,9 +68,6 @@ class I18nextSettings(private val project: Project) : PersistentStateComponent<I
     }
     
     companion object {
-        /**
-         * Gets the settings instance for the given project.
-         */
-        fun getInstance(project: Project): I18nextSettings = project.service()
+        fun getInstance(project: Project): I18nextSettings = project.service<I18nextSettings>()
     }
 }

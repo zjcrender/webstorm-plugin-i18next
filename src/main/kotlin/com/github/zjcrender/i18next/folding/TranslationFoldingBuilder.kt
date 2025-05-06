@@ -89,7 +89,7 @@ class TranslationFoldingBuilder : FoldingBuilderEx(), DumbAware {
 
     try {
       // Get the translation service instance
-      val translationService = TranslationService.getInstance()
+      val translationService = TranslationService.getInstance(project)
 
       // Find the namespace from const { t } = useTranslation("ns") if available
       val namespace: String? = findNamespace(element.methodExpression as JSReferenceExpression)
@@ -119,7 +119,7 @@ class TranslationFoldingBuilder : FoldingBuilderEx(), DumbAware {
       if (translation.isNullOrEmpty()) return
 
       // Create a unique folding group for this translation
-      val group = FoldingGroup.newGroup("i18next-translation-${element.textRange.startOffset}")
+      val group = FoldingGroup.newGroup("i18next-translation-${args[0]}")
 
       // Create the folding descriptor
       val startOffset = firstArg.textRange.startOffset

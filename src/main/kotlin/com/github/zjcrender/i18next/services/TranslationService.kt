@@ -4,7 +4,9 @@ import com.github.zjcrender.i18next.util.I18nUtil
 import com.google.gson.Gson
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.Service
+import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.logger
+import com.intellij.openapi.project.Project
 import java.io.BufferedReader
 import java.io.File
 import java.io.InputStreamReader
@@ -23,7 +25,7 @@ data class TResponse(
  */
 @Suppress("UNCHECKED_CAST")
 @Service(Service.Level.PROJECT)
-class TranslationService() : Disposable {
+class TranslationService(private val project: Project) : Disposable {
   private val LOG = logger<TranslationService>()
   private var process: Process? = null
   private var writer: OutputStreamWriter? = null
@@ -113,16 +115,8 @@ class TranslationService() : Disposable {
   }
 
   companion object {
-    private var instance: TranslationService? = null
-
-    /**
-     * Gets the service instance for the given project.
-     */
-    fun getInstance(): TranslationService {
-      if (instance == null) {
-        instance = TranslationService()
-      }
-      return instance!!
+    fun getInstance(project: Project): TranslationService {
+      return project.service<TranslationService>()
     }
   }
 }

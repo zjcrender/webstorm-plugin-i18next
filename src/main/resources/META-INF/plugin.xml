@@ -46,5 +46,9 @@
       class="com.github.zjcrender.i18next.listeners.FileEditorListener"
       topic="com.intellij.openapi.fileEditor.FileEditorManagerListener"
     />
+    <listener
+      class="com.github.zjcrender.i18next.listeners.JsonFileChangeListener"
+      topic="com.intellij.openapi.vfs.newvfs.BulkFileListener"
+    />
   </projectListeners>
 </idea-plugin>
