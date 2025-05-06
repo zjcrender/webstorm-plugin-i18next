@@ -69,7 +69,7 @@ const server = {
       !this.i18n.exists(...args)
     ) return ""
 
-    return this.i18n.t(...args)
+    return `"${ this.i18n.t(...args) }"`
   }
 }
 

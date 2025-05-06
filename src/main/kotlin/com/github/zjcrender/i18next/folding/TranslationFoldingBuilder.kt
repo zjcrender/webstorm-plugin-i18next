@@ -1,17 +1,10 @@
 package com.github.zjcrender.i18next.folding
 
 import com.github.zjcrender.i18next.services.TranslationService
-import com.github.zjcrender.i18next.util.I18nUtil
 import com.intellij.lang.ASTNode
 import com.intellij.lang.folding.FoldingBuilderEx
 import com.intellij.lang.folding.FoldingDescriptor
-import com.intellij.lang.javascript.psi.JSAssignmentExpression
-import com.intellij.lang.javascript.psi.JSCallExpression
-import com.intellij.lang.javascript.psi.JSExpressionStatement
-import com.intellij.lang.javascript.psi.JSLiteralExpression
-import com.intellij.lang.javascript.psi.JSObjectLiteralExpression
-import com.intellij.lang.javascript.psi.JSReferenceExpression
-import com.intellij.lang.javascript.psi.JSVariable
+import com.intellij.lang.javascript.psi.*
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.FoldingGroup
@@ -20,8 +13,6 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiRecursiveElementWalkingVisitor
-import com.intellij.psi.search.GlobalSearchScope
-import com.intellij.psi.search.searches.ReferencesSearch
 import com.intellij.psi.util.PsiTreeUtil
 
 /**
@@ -64,6 +55,27 @@ class TranslationFoldingBuilder : FoldingBuilderEx(), DumbAware {
     return descriptors.toTypedArray()
   }
 
+  private fun findNamespace(tMethod: JSReferenceExpression): String? {
+    val resolved = tMethod.reference?.resolve() as? JSVariable
+    // 从这个变量声明节点，向上找解构赋值元素 { t } = useTranslation(...)
+    // 注意 PSI 里解构其实会被映射成 JSDestructuringElement／JSDestructuringObject
+    val destructuring = PsiTreeUtil.getParentOfType(resolved, JSDestructuringElement::class.java)
+      ?: return null
+
+    // 解构右侧的 initializer 就是 useTranslation(...) 这个调用
+    val init = destructuring.initializer as? JSCallExpression ?: return null
+
+    // 确保是我们要的函数名
+    val initMethod = init.methodExpression as? JSReferenceExpression
+    if (initMethod?.referenceName != "useTranslation") return null
+
+    // 拿第一个参数，应该是一个 string literal
+    val args = init.arguments
+    if (args.isEmpty()) return null
+    val nsArg = args[0] as? JSLiteralExpression
+    return nsArg?.stringValue
+  }
+
   private fun processTranslationCall(
     element: JSCallExpression,
     descriptors: MutableList<FoldingDescriptor>,
@@ -79,10 +91,30 @@ class TranslationFoldingBuilder : FoldingBuilderEx(), DumbAware {
       // Get the translation service instance
       val translationService = TranslationService.getInstance()
 
-      // Get the translation for the key
-      val translation = translationService.translate(
-        collectArguments(element)
-      )
+      // Find the namespace from const { t } = useTranslation("ns") if available
+      val namespace: String? = findNamespace(element.methodExpression as JSReferenceExpression)
+
+      // Get the arguments for the translation
+      val args = collectArguments(element).toMutableList()
+
+      // Add namespace information if found
+      if (namespace != null) {
+        // Add namespace as the last argument if it's not already included
+        if (args.size == 1 && args[0] is String) {
+          // If we only have the key, add the namespace as a second argument
+          args.add(mapOf("ns" to namespace))
+        } else if (args.size >= 2 && args[1] is Map<*, *>) {
+          // If we have options as the second argument, add/keep the ns property
+          @Suppress("UNCHECKED_CAST")
+          val options = args[1] as MutableMap<String, Any?>
+          if (options["ns"] == null) {
+            options["ns"] = namespace
+          }
+        }
+      }
+
+      // Get the translation for the key with namespace
+      val translation = translationService.translate(args)
 
       if (translation.isNullOrEmpty()) return
 
@@ -130,35 +162,6 @@ class TranslationFoldingBuilder : FoldingBuilderEx(), DumbAware {
     }
 
     return arguments
-  }
-
-  private fun collectFunctionProperties(callExpression: JSCallExpression): Map<String, Any> {
-    val properties = mutableMapOf<String, String>()
-
-    val functionElement =
-      ReferencesSearch.search(callExpression, GlobalSearchScope.projectScope(callExpression.project))
-        .findFirst()?.element
-        ?: return properties
-
-    val containingFile = callExpression.containingFile
-    PsiTreeUtil.collectElements(containingFile) { element ->
-      if (element is JSAssignmentExpression) {
-        val lOperand = element.lOperand
-        val rOperand = element.rOperand
-
-        // Check if the left operand starts with "t."
-        if (lOperand is JSReferenceExpression && lOperand.qualifier?.text == "t") {
-          val propertyName = lOperand.referenceName ?: return@collectElements false
-          val propertyValue = rOperand?.text ?: "undefined"
-
-          // Add to the properties map
-          properties[propertyName] = propertyValue
-        }
-      }
-      true
-    }
-
-    return properties
   }
 
   override fun getPlaceholderText(node: ASTNode): String {

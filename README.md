@@ -4,33 +4,43 @@
 [![Version](https://img.shields.io/jetbrains/plugin/v/MARKETPLACE_ID.svg)](https://plugins.jetbrains.com/plugin/MARKETPLACE_ID)
 [![Downloads](https://img.shields.io/jetbrains/plugin/d/MARKETPLACE_ID.svg)](https://plugins.jetbrains.com/plugin/MARKETPLACE_ID)
 
-## Template ToDo list
-- [x] Create a new [IntelliJ Platform Plugin Template][template] project.
-- [ ] Get familiar with the [template documentation][template].
-- [ ] Adjust the [pluginGroup](./gradle.properties) and [pluginName](./gradle.properties), as well as the [id](./src/main/resources/META-INF/plugin.xml) and [sources package](./src/main/kotlin).
-- [ ] Adjust the plugin description in `README` (see [Tips][docs:plugin-description])
-- [ ] Review the [Legal Agreements](https://plugins.jetbrains.com/docs/marketplace/legal-agreements.html?from=IJPluginTemplate).
-- [ ] [Publish a plugin manually](https://plugins.jetbrains.com/docs/intellij/publishing-plugin.html?from=IJPluginTemplate) for the first time.
-- [ ] Set the `MARKETPLACE_ID` in the above README badges. You can obtain it once the plugin is published to JetBrains Marketplace.
-- [ ] Set the [Plugin Signing](https://plugins.jetbrains.com/docs/intellij/plugin-signing.html?from=IJPluginTemplate) related [secrets](https://github.com/JetBrains/intellij-platform-plugin-template#environment-variables).
-- [ ] Set the [Deployment Token](https://plugins.jetbrains.com/docs/marketplace/plugin-upload.html?from=IJPluginTemplate).
-- [ ] Click the <kbd>Watch</kbd> button on the top of the [IntelliJ Platform Plugin Template][template] to be notified about releases containing new features and fixes.
+[中文文档](README-zh.md)
+
+## Project Overview
+
+webstorm-plugin-i18next is a WebStorm plugin that provides translation preview functionality for JavaScript and TypeScript projects using the i18next internationalization framework. The plugin automatically identifies translation keys in your code (such as `t("translation.key")`) and replaces them with the actual translated text, improving development efficiency and user experience.
+
+## Key Features
+
+- **Translation Preview**: Automatically folds i18next translation function calls (like `t("hello.world")`) into the actual translated text
+- **Smart Cursor Handling**: Automatically expands folded regions when the cursor is on a translation key for easy editing
+- **Multi-language Support**: Switch preview languages in project settings
+- **Namespace Support**: Supports i18next namespaces, including automatic detection of namespaces from `const { t } = useTranslation("ns")` pattern
+- **Auto-detection**: Automatically detects the locales directory in your project
+
+## Technical Implementation
+
+This plugin is developed based on the IntelliJ Platform Plugin Template and includes the following main components:
+
+1. **TranslationFoldingBuilder**: Implements code folding functionality to replace translation keys with actual translated text
+2. **FileEditorListener**: Listens for file editing events and handles folding/expanding logic when cursor position changes
+3. **TranslationService**: Manages communication with the Node.js translation server and handles translation requests
+4. **I18nextSettings**: Stores and manages plugin configuration such as localization directory, selected language, and namespace
+5. **I18nUtil**: Provides utility functions like automatic detection of localization directories and displaying notifications
+
+The plugin uses a Node.js server to process translations, communicating with the server through standard input/output streams and leveraging existing i18next JavaScript libraries for translation processing.
 
 <!-- Plugin description -->
-This Fancy IntelliJ Platform Plugin is going to be your implementation of the brilliant ideas that you have.
-
-This specific section is a source for the [plugin.xml](/src/main/resources/META-INF/plugin.xml) file which will be extracted by the [Gradle](/build.gradle.kts) during the build process.
-
-To keep everything working, do not remove `<!-- ... -->` sections. 
+A plugin for i18next translation preview in JavaScript and TypeScript files.
 <!-- Plugin description end -->
 
 ## Installation
 
 - Using the IDE built-in plugin system:
-  
+
   <kbd>Settings/Preferences</kbd> > <kbd>Plugins</kbd> > <kbd>Marketplace</kbd> > <kbd>Search for "webstorm-plugin-i18next"</kbd> >
   <kbd>Install</kbd>
-  
+
 - Using JetBrains Marketplace:
 
   Go to [JetBrains Marketplace](https://plugins.jetbrains.com/plugin/MARKETPLACE_ID) and install it by clicking the <kbd>Install to ...</kbd> button in case your IDE is running.
@@ -43,6 +53,11 @@ To keep everything working, do not remove `<!-- ... -->` sections.
   Download the [latest release](https://github.com/zjcrender/webstorm-plugin-i18next/releases/latest) and install it manually using
   <kbd>Settings/Preferences</kbd> > <kbd>Plugins</kbd> > <kbd>⚙️</kbd> > <kbd>Install plugin from disk...</kbd>
 
+## Usage
+
+1. After installing the plugin, open a JavaScript or TypeScript file containing i18next translations
+2. The plugin will automatically detect translation function calls and display translation previews
+3. Configure the plugin through <kbd>Settings/Preferences</kbd> > <kbd>I18next Settings</kbd>
 
 ---
 Plugin based on the [IntelliJ Platform Plugin Template][template].
