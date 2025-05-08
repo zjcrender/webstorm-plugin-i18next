@@ -3,6 +3,10 @@ package com.github.zjcrender.i18next.services
 import com.github.zjcrender.i18next.folding.TranslationFoldingReloader
 import com.github.zjcrender.i18next.settings.I18nextSettings
 import com.google.gson.Gson
+import com.intellij.javascript.nodejs.interpreter.NodeJsInterpreter
+import com.intellij.javascript.nodejs.interpreter.NodeJsInterpreterManager
+import com.intellij.javascript.nodejs.interpreter.NodeJsInterpreterRef
+import com.intellij.javascript.nodejs.interpreter.local.NodeJsLocalInterpreter
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
@@ -15,6 +19,7 @@ import java.io.OutputStreamWriter
 import java.nio.file.Files
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.TimeUnit
+
 
 data class TResponse(
   val to: Long,
@@ -96,7 +101,10 @@ class TranslationService(private val project: Project) : Disposable {
   fun start(cwd: File = File(project.basePath!!)) {
     if (process != null) return
 
-    process = ProcessBuilder("node", getResourceFilePath("index", ".js", "/i18next"))
+    val nodeJsInterpreter = NodeJsInterpreterManager.getInstance(project).interpreter
+    val nodePath = if (nodeJsInterpreter is NodeJsLocalInterpreter) nodeJsInterpreter.interpreterSystemIndependentPath else "node"
+
+    process = ProcessBuilder(nodePath, getResourceFilePath("index", ".js", "/i18next"))
       .directory(cwd)
       .redirectErrorStream(true)
       .start()

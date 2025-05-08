@@ -3,7 +3,6 @@ package com.github.zjcrender.i18next.listeners
 import com.github.zjcrender.i18next.folding.TranslationFoldingReloader
 import com.github.zjcrender.i18next.services.TranslationService
 import com.github.zjcrender.i18next.settings.I18nextSettings
-import com.intellij.json.JsonFileType
 import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
@@ -23,7 +22,7 @@ class JsonFileChangeListener(private val project: Project) : BulkFileListener {
     events
       .filterIsInstance<VFileContentChangeEvent>()
       .map { it.file }
-      .filter { it.fileType is JsonFileType }
+      .filter { it.extension == "json" }
       .filter { it.parent.name == settings.state.previewLanguage }
       .forEach { jsonFile ->
         val ns = jsonFile.nameWithoutExtension

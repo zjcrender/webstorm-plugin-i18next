@@ -85,6 +85,7 @@ class I18nextConfigurable(private val project: Project) : Configurable {
           multilingualFolder = path
           refreshLanguages()
           updateLanguageComboBox()
+          updateUI()
         }
       }
 
@@ -116,10 +117,6 @@ class I18nextConfigurable(private val project: Project) : Configurable {
 
   private fun refreshLanguages() {
     val directory = File(multilingualFolder)
-    if (!directory.exists() || !directory.isDirectory()) {
-      Messages.showErrorDialog(project, "Invalid locales directory", "Error")
-      return
-    }
 
     languages = LocalesScanner.scanLanguages(directory)
   }
@@ -186,6 +183,7 @@ class I18nextConfigurable(private val project: Project) : Configurable {
     defaultNamespace = settings.state.defaultNamespace
 
     refreshLanguages()
+    refreshNamespaces()
 
     mainPanel?.reset()
   }
