@@ -1,26 +1,36 @@
 package com.github.zjcrender.i18next.settings
 
+import com.github.zjcrender.i18next.services.TranslationService
+import com.github.zjcrender.i18next.util.LocalesScanner
+import com.intellij.openapi.components.service
 import com.intellij.openapi.options.Configurable
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.ui.DialogPanel
 import com.intellij.openapi.ui.Messages
+import com.intellij.ui.CollectionComboBoxModel
 import com.intellij.ui.dsl.builder.*
 import java.io.File
 import javax.swing.JComponent
-import com.github.zjcrender.i18next.util.I18nUtil
-import com.intellij.openapi.diagnostic.thisLogger
 
 /**
  * Configurable for I18next plugin settings.
  */
 class I18nextConfigurable(private val project: Project) : Configurable {
-  private val settings = I18nextSettings.getInstance(project)
-  private var localesDirectory: String = settings.getLocalesDirectory()
-  private var selectedLanguage: String = settings.getSelectedLanguage()
-  private var selectedNamespace: String = settings.getSelectedNamespace()
+  private val settings = project.service<I18nextSettings>()
+  private val entryState = settings.state.copy()
+
+  // configurations
+  private var multilingualFolder: String = settings.state.multilingualFolder
 
   private var languages: List<String> = emptyList()
+  private var previewLanguage: String = settings.state.previewLanguage
+  private lateinit var previewLanguageComboBoxCell: Cell<ComboBox<String>>
+
   private var namespaces: List<String> = emptyList()
+  private var defaultNamespace: String = settings.state.defaultNamespace
+  private lateinit var defaultNamespaceComboBoxCell: Cell<ComboBox<String>>
+
 
   private var mainPanel: DialogPanel? = null
 
@@ -28,24 +38,25 @@ class I18nextConfigurable(private val project: Project) : Configurable {
 
   override fun createComponent(): JComponent {
     // Scan for languages and namespaces if locales directory is set
-    if (localesDirectory.isNotEmpty()) {
-      scanLocalesDirectory()
+    if (multilingualFolder.isNotEmpty()) {
+      refreshLanguages()
+      refreshNamespaces()
     }
 
     return panel {
-      row("Locales Directory:") {
+      row("Multilingual Folder:") {
         textField()
           .bindText(
             getter = {
               val base = project.basePath ?: ""
-              if (localesDirectory.startsWith(base)) {
-                localesDirectory.removePrefix(base).removePrefix(File.separator)
+              if (multilingualFolder.startsWith(base)) {
+                multilingualFolder.removePrefix(base).removePrefix(File.separator)
               } else {
-                localesDirectory
+                multilingualFolder
               }
             },
             setter = {
-              localesDirectory = it
+              multilingualFolder = it
             }
           )
           .columns(COLUMNS_MEDIUM)
@@ -58,99 +69,95 @@ class I18nextConfigurable(private val project: Project) : Configurable {
             null
           )
           if (directory != null) {
-            localesDirectory = directory.path
-            thisLogger().info("Selected locales directory: $localesDirectory")
-            scanLocalesDirectory()
+            multilingualFolder = directory.path
+            refreshLanguages()
+            updateLanguageComboBox()
           }
         }
 
         button("Detect") {
-          val path = I18nUtil.detectLocalePath()
+          val path = LocalesScanner.detectMultilingualFolder(project)
           if (path.isEmpty()) {
             Messages.showErrorDialog(project, "No locales directory detected", "Error")
             return@button
           }
 
-          localesDirectory = path
-          scanLocalesDirectory()
+          multilingualFolder = path
+          refreshLanguages()
+          updateLanguageComboBox()
         }
       }
 
-      row("Language:") {
-        val model = com.intellij.ui.CollectionComboBoxModel(languages.ifEmpty { listOf("<No languages found>") })
-        if (languages.isNotEmpty() && languages.contains(selectedLanguage)) {
-          model.selectedItem = selectedLanguage
-        } else if (languages.isNotEmpty()) {
-          model.selectedItem = languages.first()
-          selectedLanguage = languages.first()
-        }
-
-        comboBox(model)
+      row("Preview Language:") {
+        val modal = CollectionComboBoxModel(languages.ifEmpty { listOf("<No languages found>") })
+        modal.selectedItem = previewLanguage
+        previewLanguageComboBoxCell = comboBox(modal)
           .enabled(languages.isNotEmpty())
           .whenItemSelectedFromUi { selected ->
-            selectedLanguage = selected as String
+            previewLanguage = selected
+            refreshNamespaces()
+            updateNamespaceComboBox()
           }
+
       }
 
-      row("Namespace:") {
-        val defaultNamespaces = namespaces.ifEmpty { listOf("translation") }
-        val model = com.intellij.ui.CollectionComboBoxModel(defaultNamespaces)
-
-        if (namespaces.isNotEmpty() && namespaces.contains(selectedNamespace)) {
-          model.selectedItem = selectedNamespace
-        } else if (namespaces.isNotEmpty()) {
-          val defaultNamespace = if (namespaces.contains("translation")) "translation" else namespaces.first()
-          model.selectedItem = defaultNamespace
-          selectedNamespace = defaultNamespace
-        } else {
-          model.selectedItem = "translation"
-          selectedNamespace = "translation"
-        }
-
-        comboBox(model)
-          .enabled(namespaces.isNotEmpty())
+      row("Default Namespace:") {
+        val modal = CollectionComboBoxModel(namespaces.ifEmpty { listOf("translation") })
+        modal.selectedItem = defaultNamespace
+        defaultNamespaceComboBoxCell = comboBox(modal)
+          .enabled(true)
           .whenItemSelectedFromUi { selected ->
-            selectedNamespace = selected as String
+            defaultNamespace = selected
+            updateUI()
           }
       }
     }.also { mainPanel = it }
   }
 
-  private fun scanLocalesDirectory() {
-    val directory = File(localesDirectory)
-    if (!directory.exists() || !directory.isDirectory) {
+  private fun refreshLanguages() {
+    val directory = File(multilingualFolder)
+    if (!directory.exists() || !directory.isDirectory()) {
       Messages.showErrorDialog(project, "Invalid locales directory", "Error")
       return
     }
 
-    // Scan for languages (subdirectories)
-    val languageDirs = directory.listFiles { file -> file.isDirectory }
-    languages = languageDirs?.map { it.name } ?: emptyList()
+    languages = LocalesScanner.scanLanguages(directory)
+  }
 
-    // If no language is selected or the selected language is not in the list, select the first one
-    if (selectedLanguage.isEmpty() || !languages.contains(selectedLanguage)) {
-      selectedLanguage = languages.firstOrNull() ?: ""
+  private fun updateLanguageComboBox() {
+    val comboBox = previewLanguageComboBoxCell.component
+    val modal = CollectionComboBoxModel(languages.ifEmpty { listOf("<No languages found>") })
+
+    if (previewLanguage !in languages) {
+      previewLanguage = languages.first()
     }
+    modal.selectedItem = previewLanguage
 
-    if (selectedLanguage.isEmpty()) {
-      namespaces = listOf("translation", "OK")
-      selectedNamespace = "translation"
-      return
-    } else {
-      // Scan for namespaces (JSON files in the selected language directory)
-      val namespaceFiles = File(directory, selectedLanguage).listFiles { file ->
-        file.isFile && file.extension.equals("json", ignoreCase = true)
-      }
-      namespaces = namespaceFiles?.map { it.nameWithoutExtension } ?: listOf("translation")
+    comboBox.model = modal
+    comboBox.isEnabled = languages.isNotEmpty()
+    modal.update()
+    comboBox.updateUI()
 
-      // If no namespace is selected or the selected namespace is not in the list, select "translation" or the first one
-      if (selectedNamespace.isEmpty() || !namespaces.contains(selectedNamespace)) {
-        selectedNamespace = namespaces.first()
-      }
+    refreshNamespaces()
+    updateNamespaceComboBox()
+  }
+
+  private fun refreshNamespaces() {
+    namespaces = LocalesScanner.scanNamespaces(File(multilingualFolder, previewLanguage))
+  }
+
+  private fun updateNamespaceComboBox() {
+    val comboBox = defaultNamespaceComboBoxCell.component
+    val modal = CollectionComboBoxModel(namespaces.ifEmpty { listOf("translation") })
+
+    if (defaultNamespace !in namespaces) {
+      defaultNamespace = namespaces.first()
     }
+    modal.selectedItem = defaultNamespace
 
-    updateUI()
-
+    comboBox.model = modal
+    modal.update()
+    comboBox.updateUI()
   }
 
   private fun updateUI() {
@@ -158,27 +165,36 @@ class I18nextConfigurable(private val project: Project) : Configurable {
   }
 
   override fun isModified(): Boolean {
-    return localesDirectory != settings.getLocalesDirectory() ||
-      selectedLanguage != settings.getSelectedLanguage() ||
-      selectedNamespace != settings.getSelectedNamespace()
+    return multilingualFolder != settings.state.multilingualFolder ||
+      previewLanguage != settings.state.previewLanguage ||
+      defaultNamespace != settings.state.defaultNamespace
   }
 
   override fun apply() {
-    settings.setLocalesDirectory(localesDirectory)
-    settings.setSelectedLanguage(selectedLanguage)
-    settings.setSelectedNamespace(selectedNamespace)
+    settings.apply(
+      settings.state.copy(
+        multilingualFolder = multilingualFolder,
+        previewLanguage = previewLanguage,
+        defaultNamespace = defaultNamespace
+      )
+    )
   }
 
   override fun reset() {
-    localesDirectory = settings.getLocalesDirectory()
-    selectedLanguage = settings.getSelectedLanguage()
-    selectedNamespace = settings.getSelectedNamespace()
+    multilingualFolder = settings.state.multilingualFolder
+    previewLanguage = settings.state.previewLanguage
+    defaultNamespace = settings.state.defaultNamespace
 
-    if (localesDirectory.isNotEmpty()) {
-      scanLocalesDirectory()
-    }
+    refreshLanguages()
 
     mainPanel?.reset()
+  }
+
+  override fun disposeUIResources() {
+    if (entryState == settings.state) return
+
+    // restart translation service
+    project.service<TranslationService>().setup()
   }
 
   companion object {

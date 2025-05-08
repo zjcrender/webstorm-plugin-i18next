@@ -1,6 +1,7 @@
 package com.github.zjcrender.i18next.services
 
-import com.github.zjcrender.i18next.util.I18nUtil
+import com.github.zjcrender.i18next.folding.TranslationFoldingReloader
+import com.github.zjcrender.i18next.settings.I18nextSettings
 import com.google.gson.Gson
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.Service
@@ -11,6 +12,7 @@ import java.io.BufferedReader
 import java.io.File
 import java.io.InputStreamReader
 import java.io.OutputStreamWriter
+import java.nio.file.Files
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.TimeUnit
 
@@ -32,6 +34,24 @@ class TranslationService(private val project: Project) : Disposable {
   private var reader: BufferedReader? = null
   private val responseQueue = LinkedBlockingQueue<TResponse>()
 
+  private fun getResourceFilePath(
+    name: String,
+    suffix: String,
+    base: String = "/"
+  ): String {
+    val path = "$base/$name$suffix"
+    val resourceStream = object {}.javaClass.getResourceAsStream(path)
+      ?: throw IllegalArgumentException("Resource not found: $path")
+    val tempFile = Files.createTempFile(name, suffix).toFile()
+    tempFile.deleteOnExit() // JVM 退出时删除临时文件
+    resourceStream.use { input ->
+      tempFile.outputStream().use { output ->
+        input.copyTo(output)
+      }
+    }
+    return tempFile.absolutePath
+  }
+
   fun invoke(action: String, args: List<*> = emptyList<Any>()): Long {
     if (process == null) return -1L
 
@@ -52,6 +72,8 @@ class TranslationService(private val project: Project) : Disposable {
     timeout: Long = 10L,
     condition: (TResponse) -> Boolean = { it.to == timestamp }
   ): T? {
+    if (timestamp == -1L) return null
+
     val deadline = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(timeout)
 
     while (true) {
@@ -71,10 +93,10 @@ class TranslationService(private val project: Project) : Disposable {
     }
   }
 
-  fun start(cwd: File) {
+  fun start(cwd: File = File(project.basePath!!)) {
     if (process != null) return
 
-    process = ProcessBuilder("node", I18nUtil.getResourceFilePath("index", ".js", "/i18next"))
+    process = ProcessBuilder("node", getResourceFilePath("index", ".js", "/i18next"))
       .directory(cwd)
       .redirectErrorStream(true)
       .start()
@@ -102,6 +124,19 @@ class TranslationService(private val project: Project) : Disposable {
     process = null
     writer = null
     reader = null
+  }
+
+  fun setup() {
+    val state = project.service<I18nextSettings>().state
+
+    stop()
+    start()
+    invoke(
+      "setup",
+      listOf<Any>(state.multilingualFolder, state.previewLanguage, state.defaultNamespace)
+    )
+
+    project.service<TranslationFoldingReloader>().scheduleReload()
   }
 
   fun translate(args: List<*>): String? {

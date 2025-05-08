@@ -84,10 +84,10 @@ const server = {
 process.stdin.on('data', (input) => {
   try {
     const { action, args, timestamp } = JSON.parse(input.trim());
-    console.log({
+    console.log(JSON.stringify({
       to: timestamp,
       data: server[action](...args)
-    })
+    }))
   } catch (e) {
     console.error(e);
   }

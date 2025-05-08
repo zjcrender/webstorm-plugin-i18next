@@ -3,7 +3,6 @@ package com.github.zjcrender.i18next.listeners
 import com.intellij.lang.javascript.JavascriptLanguage
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.editor.Editor
-import com.intellij.openapi.editor.FoldingGroup
 import com.intellij.openapi.editor.event.CaretEvent
 import com.intellij.openapi.editor.event.CaretListener
 import com.intellij.openapi.fileEditor.FileEditorManager
@@ -12,7 +11,6 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiManager
-import com.github.zjcrender.i18next.util.I18nUtil
 
 /**
  * Listener for file editor events.
