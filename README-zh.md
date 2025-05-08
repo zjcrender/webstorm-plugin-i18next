@@ -1,4 +1,4 @@
-# webstorm-plugin-i18next
+# I18next Preview
 
 ![Build](https://github.com/zjcrender/webstorm-plugin-i18next/workflows/Build/badge.svg)
 [![Version](https://img.shields.io/jetbrains/plugin/v/22407.svg)](https://plugins.jetbrains.com/plugin/22407)
@@ -6,7 +6,7 @@
 
 ## 项目概述
 
-webstorm-plugin-i18next 是一个 WebStorm 插件，为使用 i18next 国际化框架的 JavaScript 和 TypeScript 项目提供翻译预览功能。该插件能够自动识别代码中的翻译键（如 `t("translation.key")`），并将其替换为实际的翻译文本，从而提高开发效率和用户体验。
+I18next Preview 是一个 WebStorm 插件，为使用 i18next 国际化框架的 JavaScript 和 TypeScript 项目提供翻译预览功能。该插件能够自动识别代码中的翻译键（如 `t("translation.key")`），并将其替换为实际的翻译文本，从而提高开发效率和用户体验。
 
 ## 主要功能
 
@@ -59,7 +59,7 @@ project/
 
 - **通过 IDE 内置插件系统**：
 
-  <kbd>设置/首选项</kbd> > <kbd>插件</kbd> > <kbd>市场</kbd> > <kbd>搜索 "webstorm-plugin-i18next"</kbd> >
+  <kbd>设置/首选项</kbd> > <kbd>插件</kbd> > <kbd>市场</kbd> > <kbd>搜索 "I18next Preview"</kbd> >
   <kbd>安装</kbd>
 
 - **通过 JetBrains 插件市场**：

@@ -1,4 +1,4 @@
-# webstorm-plugin-i18next
+# I18next Preview
 
 ![Build](https://github.com/zjcrender/webstorm-plugin-i18next/workflows/Build/badge.svg)
 [![Version](https://img.shields.io/jetbrains/plugin/v/22407.svg)](https://plugins.jetbrains.com/plugin/22407)
@@ -8,7 +8,7 @@
 
 ## Project Overview
 
-webstorm-plugin-i18next is a WebStorm plugin that provides translation preview functionality for JavaScript and TypeScript projects using the i18next internationalization framework. The plugin automatically identifies translation keys in your code (such as `t("translation.key")`) and replaces them with the actual translated text, improving development efficiency and user experience.
+I18next Preview is a WebStorm plugin that provides translation preview functionality for JavaScript and TypeScript projects using the i18next internationalization framework. The plugin automatically identifies translation keys in your code (such as `t("translation.key")`) and replaces them with the actual translated text, improving development efficiency and user experience.
 
 ## Key Features
 
@@ -61,7 +61,7 @@ A plugin for i18next translation preview in JavaScript and TypeScript files.
 
 - Using the IDE built-in plugin system:
 
-  <kbd>Settings/Preferences</kbd> > <kbd>Plugins</kbd> > <kbd>Marketplace</kbd> > <kbd>Search for "webstorm-plugin-i18next"</kbd> >
+  <kbd>Settings/Preferences</kbd> > <kbd>Plugins</kbd> > <kbd>Marketplace</kbd> > <kbd>Search for "I18next Preview"</kbd> >
   <kbd>Install</kbd>
 
 - Using JetBrains Marketplace:
