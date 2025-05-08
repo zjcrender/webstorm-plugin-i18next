@@ -57,6 +57,9 @@ The plugin uses a Node.js server to process translations, communicating with the
 A plugin for i18next translation preview in JavaScript and TypeScript files.
 <!-- Plugin description end -->
 
+## Demo
+![Demo](./media/demo.gif)
+
 ## Installation
 
 - Using the IDE built-in plugin system:

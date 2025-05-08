@@ -55,6 +55,9 @@ project/
 一个用于在 JavaScript 和 TypeScript 文件中预览 i18next 翻译的插件。
 <!-- Plugin description end -->
 
+## 示例
+![Demo](./media/demo.gif)
+
 ## 安装方法
 
 - **通过 IDE 内置插件系统**：
